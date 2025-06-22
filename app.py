@@ -111,23 +111,16 @@ def receber_pedido():
 @app.route("/painel")
 def painel():
     cliente = request.args.get("cliente", "").lower()
-    data_str = request.args.get("data", "")
-    data=None
-    if data_str:
-        try:
-            data = datetime.strptime(data_str, "%Y-%m-%d")
-        except ValueError:
-            return jsonify({"erro": "Data inválida. Use o formato YYYY-MM-DD."}), 400
-            data= None
     pedidos = carregar_pedidos_json()
     if cliente:
         pedidos = [p for p in pedidos if cliente in p.get("cliente","").lower()]
-    return render_template("view.html", pedidos=pedidos)
+    return render_template("view.html", pedidos=pedidos, current_date=datetime.now().strftime("%d-%m-%Y"))
 
 
-@app.route("/")
+@app.route("/",)
 def index():
-    return render_template("index.html")
+    nome = request.args.get("sucesso")
+    return render_template("index.html",sucesso=nome)
 
 
 @app.route("/cliente/enviar", methods=["POST"])
@@ -147,19 +140,9 @@ def cliente_enviar():
         resposta = requests.post("http://localhost:5000/pedido", json=payload)
 
         if resposta.status_code == 200:
-            return render_template_string("""
-                <div style='padding: 20px;'>
-                  <h2>✅ Pedido enviado com sucesso!</h2>
-                  <a href='/'>Fazer outro pedido</a>
-                </div>
-            """)
+            return redirect(url_for("index",sucesso=cliente))
         else:
-            return render_template_string(f"""
-                <div style='padding: 20px;'>
-                  <h2>❌ Erro ao enviar pedido: {resposta.json().get('erro')}</h2>
-                  <a href='/'>Tentar novamente</a>
-                </div>
-            """)
+            return f"Erro ao enviar pedido: {resposta.json().get('erro')}", 400
     except Exception as e:
         return render_template_string(f"""
             <div style='padding: 20px;'>
