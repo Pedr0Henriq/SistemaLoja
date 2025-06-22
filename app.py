@@ -1,6 +1,7 @@
 from datetime import datetime
 import uuid
-from flask import Flask, json, redirect, render_template, request, jsonify, url_for
+from flask import Flask, json, redirect, render_template, render_template_string, request, jsonify, url_for
+import requests
 from utils import edit_func
 from utils.parser import parse_mensagem, PedidoParsingException
 from utils.pdf_generator import gerar_pdf, PDFGenerationException
@@ -124,5 +125,48 @@ def painel():
     return render_template("view.html", pedidos=pedidos)
 
 
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+@app.route("/cliente/enviar", methods=["POST"])
+def cliente_enviar():
+    cliente = request.form.get("cliente")
+    telefone = request.form.get("telefone")
+    mensagem = request.form.get("mensagem")
+
+    payload = {
+        "cliente": cliente,
+        "telefone": telefone,
+        "mensagem": mensagem
+    }
+
+    try:
+        # Requisição local para a própria rota /pedido
+        resposta = requests.post("http://localhost:5000/pedido", json=payload)
+
+        if resposta.status_code == 200:
+            return render_template_string("""
+                <div style='padding: 20px;'>
+                  <h2>✅ Pedido enviado com sucesso!</h2>
+                  <a href='/'>Fazer outro pedido</a>
+                </div>
+            """)
+        else:
+            return render_template_string(f"""
+                <div style='padding: 20px;'>
+                  <h2>❌ Erro ao enviar pedido: {resposta.json().get('erro')}</h2>
+                  <a href='/'>Tentar novamente</a>
+                </div>
+            """)
+    except Exception as e:
+        return render_template_string(f"""
+            <div style='padding: 20px;'>
+              <h2>❌ Erro interno: {str(e)}</h2>
+              <a href='/cliente'>Tentar novamente</a>
+            </div>
+        """)
+    
 if __name__ == "__main__":
     app.run(debug=True)

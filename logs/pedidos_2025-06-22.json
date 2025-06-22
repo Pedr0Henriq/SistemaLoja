@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "id": "e70af5e6-c702-4a99-af69-88d38094bbc9",
+    "cliente": "Pedro",
+    "telefone": "81993379711",
+    "itens": [
+      {
+        "item": "Bandeiras",
+        "quantidade": 2
+      },
+      {
+        "item": "Linhas de Costurar",
+        "quantidade": 3
+      }
+    ],
+    "data_hora": "2025-06-22T12:58:28"
+  }
+]
