@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Pedido</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; }
+        label { display: block; margin-top: 10px; }
+        input[readonly], input[disabled] { background: #f0f0f0; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background: #eee; }
+        .actions { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Editar Pedido</h1>
+    <form action="/pedido/{{ pedido.id }}/editar" method="post" >
+        <label>
+            Cliente:
+            <input type="text" name="cliente" value="{{ pedido.cliente }}" readonly>
+        </label>
+        <label>
+            ID do Pedido:
+            <input type="text" name="id" value="{{ pedido.id }}" readonly>
+        </label>
+        <h2>Itens do Pedido</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in pedido.itens %}
+                <tr>
+                    <td>
+                        <input type="text" name="itens[{{ loop.index0 }}][item]" value="{{ item.item }}">
+                    </td>
+                    <td>
+                        <input type="number" name="itens[{{ loop.index0 }}][quantidade]" value="{{ item.quantidade }}" min="1" required>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="actions">
+            <button type="submit">Salvar Alterações</button>
+        </div>
+    </form>
+</body>
+</html>
