@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Pedido</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 30px;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+        }
+        form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: auto;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        input[readonly], input[disabled] {
+            background: #f0f0f0;
+        }
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: #4CAF50;
+            outline: none;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+        .actions {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>Editar Pedido</h1>
+    <form action="/pedido/{{ pedido[0] }}/editar" method="post" >
+                <label>
+            ID do Pedido:
+            <input type="text" name="id" value="{{ pedido[0] }}" readonly>
+        </label>
+        <label>
+            Cliente:
+            <input type="text" name="cliente" value="{{ pedido[1] }}" readonly>
+        </label>
+        <label>
+            Telefone:
+            <input type="text" name="telefone" value="{{ pedido[2] or '' }}" pattern="\(?\d{2}\)?[\s-]?\d{4,5}[\s-]?\d{4}" placeholder="(XX) XXXXX-XXXX">
+        </label>
+        <label>
+            Status:
+            <select name="status" required>
+                <option value="">Selecione</option>
+                <option value="pendente" {% if pedido[4] == 'pendente' %}selected{% endif %}>Pendente</option>
+                <option value="processando" {% if pedido[4] == 'processando' %}selected{% endif %}>Processando</option>
+                <option value="enviado" {% if pedido[4] == 'enviado' %}selected{% endif %}>Enviado</option>
+                <option value="entregue" {% if pedido[4] == 'entregue' %}selected{% endif %}>Entregue</option>
+                <option value="cancelado" {% if pedido[4] == 'cancelado' %}selected{% endif %}>Cancelado</option>
+            </select>
+        </label>
+        <h2>Itens do Pedido</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Produto</th>
+                    <th>Quantidade</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in itens %}
+                <tr>
+                    <td>
+                        <input type="text" name="itens[{{ loop.index0 }}][item]" value="{{ item[2] }}">
+                    </td>
+                    <td>
+                        <input type="number" name="itens[{{ loop.index0 }}][quantidade]" value="{{ item[3] }}" min="1" required>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="actions">
+            <button type="submit">Salvar Alterações</button>
+        </div>
+    </form>
+</body>
+</html>

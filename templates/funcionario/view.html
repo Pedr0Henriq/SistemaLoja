@@ -1,0 +1,181 @@
+<!-- templates/painel.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Pedidos - Armarinho Glória</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: #f0f8ff;
+    }
+    .highlight {
+      background-color: #fff0b3;
+      text-align: center;
+      padding: 10px;
+      font-weight: bold;
+      position: relative;
+    }
+    .painel {
+      padding: 50px;
+    }
+    .card-pedido {
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.05);
+      margin-bottom: 20px;
+    }
+    .btn-space {
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    #notificacao {
+      position: fixed;
+      top: 80px;
+      right: 30px;
+      background: #198754;
+      color: white;
+      padding: 15px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: none;
+      z-index: 9999;
+    }
+    #sino-container {
+      position: absolute;
+      right: 20px;
+      top: 10px;
+      font-size: 22px;
+      cursor: pointer;
+    }
+    #sino-container .badge {
+      background-color: red;
+      color: white;
+      font-size: 12px;
+      position: absolute;
+      top: -5px;
+      right: -8px;
+      border-radius: 50%;
+      padding: 3px 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="highlight">
+    Painel do Funcionário - Armarinho Glória 🛒
+    <div id="sino-container">
+      🔔 <span id="badge" class="badge" style="display: none;">1</span>
+    </div>
+  </div>
+
+  <div id="notificacao">🔔 Novo pedido recebido!</div>
+  <audio id="notificacao-audio" src="static/assets/new-notification-011-364050.mp3"></audio>
+
+  <div class="container painel">
+    <form method="get" class="row g-3 mb-4">
+      <div class="col-md-4">
+        <input type="text" name="cliente" placeholder="Buscar por cliente" class="form-control" value="{{ request.args.get('cliente', '') }}">
+      </div>
+      <div class="col-md-3">
+        <input type="date" name="data" class="form-control" value="{{ request.args.get('data', '') or current_date }}">
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-primary">Filtrar</button>
+      </div>
+    </form>
+
+    {% for pedido in pedidos %}
+    <div class="card card-pedido" id="pedido-{{ pedido.id }}">
+      <div class="card-body">
+        <h5 class="card-title">📦 {{ pedido.cliente }} <small class="text-muted">(ID: {{ pedido.id }})</small></h5>
+        <p><strong>Telefone:</strong> {{ pedido.telefone or 'Não informado' }}</p>
+        <p><strong>Data:</strong> {{ pedido.data_hora }}</p>
+        <p><strong>Itens:</strong></p>
+        <ul>
+          {% for item in pedido.itens %}
+          <li>{{ item.quantidade }} {{item.unidade}} de {{ item.item }}
+            {% if item.fotos %}
+            <div class="fotos-item">
+              {% for foto in item.fotos %}
+              <img src="{{ url_for('static', filename=foto.replace('static/', ''))}}" alt="Foto do {{item.item}}" width="300">
+              {% endfor %}
+            </div>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="mt-3">
+          <button class="btn btn-success btn-sm btn-space" 
+                  data-cliente="{{ pedido.cliente }}" 
+                  data-telefone="{{ pedido.telefone }}" 
+                  data-itens='{{ pedido.itens|tojson|safe }}' 
+                  onclick="enviarPedidoWhatsApp(this)">Enviar WhatsApp</button>
+
+          <form action="/pedido/{{ pedido.id }}/editar" method="get" style="display:inline;">
+            <button type="submit" class="btn btn-warning btn-sm btn-space">Editar</button>
+          </form>
+
+          <button onclick="excluirPedido('{{ pedido.id }}', 'pedido-{{ pedido.id }}')" class="btn btn-danger btn-sm btn-space">
+            Excluir
+          </button></div>
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if pedidos|length == 0 %}
+    <p class="text-center text-muted">Nenhum pedido encontrado para os filtros aplicados.</p>
+    {% endif %}
+  </div>
+
+  <script>
+    function enviarPedidoWhatsApp(button) {
+      const nome = button.dataset.cliente;
+      let telefone = button.dataset.telefone || "";
+      if (/^\d{8,9}$/.test(telefone)) telefone = "81" + telefone;
+
+      const itens = JSON.parse(button.dataset.itens);
+      const lista = itens.map(i => `- ${i.quantidade} x ${i.item}`).join("%0A");
+
+      const valor = prompt("Informe o valor total do pedido para " + nome + ":");
+      if (valor) {
+        const mensagem = `Olá ${nome}! Seu pedido:%0A${lista}%0ATotal: R$ ${valor}%0A%0AEscolha a forma de pagamento:%0A1️⃣ Pix: 037.886.844-61%0APague na retirada%0A2️⃣ Dinheiro%0A3️⃣ Cartão%0A%0A`;
+        const link = `https://wa.me/55${telefone}?text=${mensagem}`;
+        window.open(link, '_blank');
+      }
+    }
+
+    function excluirPedido(id, cardId) {
+      if (confirm('Tem certeza que deseja excluir este pedido?')) {
+        fetch(`/pedido/${id}/excluir`, {
+          method: 'DELETE',
+        })
+        .then(response => {
+          if (response.ok) {
+            document.getElementById(cardId).remove();
+          }
+          location.reload();
+        });
+      }
+    }
+
+    function verificarNovosPedidos() {
+      fetch('/verificar_novos_pedidos')
+        .then(res => res.json())
+        .then(data => {
+          if (data.novo) {
+            document.getElementById('badge').style.display = 'inline';
+            const audio = document.getElementById('notificacao-audio');
+            const toast = document.getElementById('notificacao');
+            toast.style.display = 'block';
+            audio.play();
+            setTimeout(() => {
+              toast.style.display = 'none';
+              location.reload();
+            }, 5000);
+          }
+        });
+    }
+
+    setInterval(verificarNovosPedidos, 5000);
+  </script>
+</body>
+</html>

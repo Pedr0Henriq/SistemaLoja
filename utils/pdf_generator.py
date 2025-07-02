@@ -6,7 +6,7 @@ from datetime import datetime
 class PDFGenerationException(Exception):
     pass
 
-def gerar_pdf(id,pedido, nome_cliente="Cliente", caminho_saida="static/pedidos",telefone_cliente=""):
+def gerar_pdf(pedido,mensagem, caminho_saida="static/pedidos"):
     try:
         os.makedirs(caminho_saida, exist_ok=True)
         data_hoje = datetime.now().strftime("%d/%m/%Y")
@@ -27,13 +27,13 @@ def gerar_pdf(id,pedido, nome_cliente="Cliente", caminho_saida="static/pedidos",
 
         # Informações do cliente
         pdf.set_font("Arial", size=12)
-        pdf.cell(0, 10, f"Nome: {nome_cliente}", ln=True)
-        if telefone_cliente:
-            pdf.cell(0, 10, f"Telefone: {telefone_cliente}", ln=True)
+        pdf.cell(0, 10, f"Nome: {pedido['cliente']}", ln=True)
+        if pedido['telefone']:
+            pdf.cell(0, 10, f"Telefone: {pedido['telefone']}", ln=True)
         else:
             pdf.cell(0, 10, "Telefone: Não informado", ln=True)
         pdf.cell(0, 10, f"Data: {data_hoje}", ln=True)
-        pdf.cell(0,10,f"Pedido: {id}", ln=True)
+        pdf.cell(0,10,f"Pedido: {pedido['id']}", ln=True)
         pdf.ln(5)
 
         # Tabela de itens
@@ -44,7 +44,7 @@ def gerar_pdf(id,pedido, nome_cliente="Cliente", caminho_saida="static/pedidos",
         pdf.cell(40, 10, "TOTAL", 1, 1, "C")
 
         pdf.set_font("Arial", size=11)
-        for item in pedido:
+        for item in mensagem:
             qtd = str(item.get("quantidade", ""))
             nome = item.get("item", "")
             valor_unit = item.get("valor", "-")
@@ -60,7 +60,7 @@ def gerar_pdf(id,pedido, nome_cliente="Cliente", caminho_saida="static/pedidos",
             pdf.cell(40, 10, valor_unit, 1, 0, "C")
             pdf.cell(40, 10, total, 1, 1, "C")
 
-        nome_arquivo = f"{nome_cliente.replace(' ', '_').lower()}_pedido{id}.pdf"
+        nome_arquivo = f"{pedido['cliente'].replace(' ', '_').lower()}_pedido{pedido['id']}.pdf"
         caminho_completo = os.path.join(caminho_saida, nome_arquivo)
         pdf.output(caminho_completo)
         return caminho_completo

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "b090ee31-1143-4247-a19c-1e48c941adeb",
+    "cliente": "Pedro",
+    "telefone": "81993379711",
+    "itens": [
+      {
+        "item": "Bolsa",
+        "quantidade": 1
+      }
+    ],
+    "data_hora": "2025-06-23T10:13:56"
+  }
+]

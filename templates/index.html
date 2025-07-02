@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Pedido - Armarinho Glória</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"> -->
   <style>
     body {
       background: #f0f8ff;
@@ -50,7 +50,8 @@
       margin-bottom: 20px;
       font-weight: 500;
     }
-  </style>
+  </style> 
+  
 </head>
 <body>
   <div class="highlight">
@@ -58,11 +59,11 @@
   </div>
   <div class="container hero">
     <div class="hero-text">
-      <img src="https://via.placeholder.com/300x120.png?text=Armarinho+Gl%C3%B3ria" alt="Logo" class="logo">
-      <h3 class="mt-4">Monte seu pedido abaixo 👇</h3>
+      <img src="../static/assets/armarinho.png" alt="Logo" class="logo">
+      <h3 class="mt-4">Monte seu pedido</h3>
     </div>
 
-    <form method="post" action="/cliente/enviar" class="hero-form" onsubmit="return montarMensagem()">
+    <form method="post" action="/cliente/enviar" class="hero-form" onsubmit="montarMensagem(event)" enctype="multipart/form-data">
       {% if sucesso %}
       <div class="alert-sucesso">
         ✅ Pedido enviado com sucesso! Obrigado, {{ sucesso }}.
@@ -82,8 +83,15 @@
       <h5 class="mt-4 mb-3">Itens do Pedido</h5>
       <div id="itens-pedido">
         <div class="pedido-linha">
-          <input type="number" name="quantidade[]" class="form-control" placeholder="Qtd" required>
+          <input type="number" name="quantidade[]" class="form-control" placeholder="Quantidade" required>
+          <select name="unidade_medida" required class="form-select">
+            <option value="">Selecione</option>
+                <option value="u">Unidades</option>
+                <option value="c">Centímetros</option>
+                <option value="m">Metros</option>
+          </select>
           <input type="text" name="item[]" class="form-control" placeholder="Nome do item" required>
+          <input type="file" name="foto_0" class="form-control">
         </div>
       </div>
       <button type="button" class="btn btn-secondary btn-sm mb-3" onclick="adicionarLinha()">+ Adicionar Item</button>
@@ -98,28 +106,44 @@
 
   <script>
     function adicionarLinha() {
-      const linha = document.createElement('div');
-      linha.className = 'pedido-linha';
-      linha.innerHTML = `
-        <input type="number" name="quantidade[]" class="form-control" placeholder="Qtd" required>
-        <input type="text" name="item[]" class="form-control" placeholder="Nome do item" required>
-      `;
-      document.getElementById('itens-pedido').appendChild(linha);
+      const container = document.getElementById("itens-pedido");
+  const index = container.children.length;
+  const linha = document.createElement("div");
+  linha.className = "pedido-linha";
+  linha.innerHTML = `
+    <input type="number" name="quantidade[]" class="form-control" placeholder="Quantidade" required>
+    <select name="unidade_medida" required class="form-select">
+      <option value="">Selecione</option>
+      <option value="u">Unidades</option>
+      <option value="c">Centímetros</option>
+      <option value="m">Metros</option>
+    </select>
+    <input type="text" name="item[]" class="form-control" placeholder="Nome do item" required>
+    <input type="file" name="foto_${index}" class="form-control">
+  `;
+  container.appendChild(linha);
     }
 
-    function montarMensagem() {
+   async function montarMensagem(event) {
+      event.preventDefault();
+
       const quantidades = document.getElementsByName('quantidade[]');
+      const unidadeMedidas = document.getElementsByName('unidade_medida');
       const itens = document.getElementsByName('item[]');
+      const fotos = document.getElementsByName('foto[]');
       let linhas = [];
       for (let i = 0; i < quantidades.length; i++) {
         const qtd = quantidades[i].value.trim();
+        const unidade = unidadeMedidas[i].value.trim();
         const nome = itens[i].value.trim();
-        if (qtd && nome) {
-          linhas.push(`${qtd} x ${nome}`);
+        if (!qtd || !unidade || !nome) {
+          alert("Por favor, preencha todos os campos corretamente.");
+          return;
         }
+        linhas.push(`${qtd}${unidade} x ${nome}`);
       }
       document.getElementById('mensagem').value = linhas.join('\n');
-      return true;
+      event.target.submit();
     }
   </script>
 </body>
