@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmação de Pedido</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            color: #333;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            background: #ffffff;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        form {
+            margin-top: 20px;
+            padding: 20px;
+            background: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .logo img {
+            max-width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">
+        <img src="../../static/assets/armarinho.png" alt="Logo Armarinho Glória">
+    </div>
+    <h2>Confirmar envio do pedido de {{ cliente }}</h2>
+    <ul>
+        {% for item in itens %}
+            <li>{{ item.quantidade }}{{item.unidade}} x {{ item.item }}</li>
+        {% endfor %}
+    </ul>
+    <form method="POST" action="/pedido/{{ pedido_id }}/whatsapp">
+        <input type="hidden" name="cliente" value="{{ cliente }}">
+        <input type="hidden" name="telefone" value="{{ telefone }}">
+        <input type="hidden" name="itens" value='{{ itens|tojson|safe }}'>
+        <label>Valor total do pedido:</label>
+        <input type="text" name="valor" placeholder="Informe o valor" required>
+        <button type="submit">Enviar no WhatsApp</button>
+    </form>
+</body>
+</html>

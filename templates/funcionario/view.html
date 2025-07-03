@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Painel de Pedidos - Armarinho Glória</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
@@ -17,36 +17,72 @@
       position: relative;
     }
     .painel {
-      padding: 50px;
+      padding: 20px;
     }
+    @media (min-width: 768px) {
+      .painel {
+        padding: 50px;
+      }
+}
     .card-pedido {
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.05);
+      margin-bottom: 15px;
+      overflow: hidden;
     }
     .btn-space {
       margin-right: 5px;
       margin-bottom: 5px;
+      width: 100%;
     }
+    @media (min-width: 576px) {
+  .btn-space {
+    width: auto; /* Volta ao normal em telas maiores */
+  }
+}
     #notificacao {
-      position: fixed;
-      top: 80px;
-      right: 30px;
-      background: #198754;
+     position: fixed;
+    top: 60px;
+    left: 10px;
+    right: 10px;
+    text-align: center;
+    padding: 10px;
+    background: #198754;
       color: white;
-      padding: 15px 20px;
       border-radius: 8px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
       display: none;
       z-index: 9999;
     }
+
+    @media (min-width: 768px) {
+      #notificacao {
+    left: auto;
+    right: 30px;
+    width: auto;
+    padding: 15px 20px;
+    background: #198754;
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      display: none;
+      z-index: 9999;
+  }
+      
+    }
     #sino-container {
       position: absolute;
-      right: 20px;
-      top: 10px;
-      font-size: 22px;
-      cursor: pointer;
+      right: 10px;
+      top: 8px;
+      font-size: 18px;
     }
+    @media (min-width: 768px) {
+  #sino-container {
+    right: 20px;
+    top: 10px;
+    font-size: 22px;
+  }
+}
     #sino-container .badge {
       background-color: red;
       color: white;
@@ -57,6 +93,15 @@
       border-radius: 50%;
       padding: 3px 6px;
     }
+
+    .fotos-item a {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 3px 8px;
+  background: #f0f8ff;
+  border-radius: 4px;
+  font-size: 14px;
+}
   </style>
 </head>
 <body>
@@ -71,14 +116,14 @@
   <audio id="notificacao-audio" src="static/assets/new-notification-011-364050.mp3"></audio>
 
   <div class="container painel">
-    <form method="get" class="row g-3 mb-4">
-      <div class="col-md-4">
+    <form method="get" class="row g-2 g-md-3 mb-4">
+      <div class="col-12 col-md-4">
         <input type="text" name="cliente" placeholder="Buscar por cliente" class="form-control" value="{{ request.args.get('cliente', '') }}">
       </div>
-      <div class="col-md-3">
+      <div class="col-12 col-md-3">
         <input type="date" name="data" class="form-control" value="{{ request.args.get('data', '') or current_date }}">
       </div>
-      <div class="col-md-2">
+      <div class="col-12 col-md-2">
         <button type="submit" class="btn btn-primary">Filtrar</button>
       </div>
     </form>
@@ -96,7 +141,9 @@
             {% if item.fotos %}
             <div class="fotos-item">
               {% for foto in item.fotos %}
-              <img src="{{ url_for('static', filename=foto.replace('static/', ''))}}" alt="Foto do {{item.item}}" width="300">
+              <a href="{{ url_for('static', filename=foto.replace('static/', ''))}}" target="_blank">
+                  Ver foto do produto
+              </a>
               {% endfor %}
             </div>
             {% endif %}
@@ -104,15 +151,36 @@
           {% endfor %}
         </ul>
         <div class="mt-3">
-          <button class="btn btn-success btn-sm btn-space" 
-                  data-cliente="{{ pedido.cliente }}" 
-                  data-telefone="{{ pedido.telefone }}" 
-                  data-itens='{{ pedido.itens|tojson|safe }}' 
-                  onclick="enviarPedidoWhatsApp(this)">Enviar WhatsApp</button>
-
-          <form action="/pedido/{{ pedido.id }}/editar" method="get" style="display:inline;">
-            <button type="submit" class="btn btn-warning btn-sm btn-space">Editar</button>
+          {% if pedido.status == "pendente" %}
+            <form method="GET" action="/pedido/{{ pedido.id }}/confirmar" style="display:inline;">
+              <input type="hidden" name="cliente" value="{{ pedido.cliente }}">
+              <input type="hidden" name="telefone" value="{{ pedido.telefone }}">
+              <input type="hidden" name="itens" value='{{ pedido.itens|tojson|safe }}'>
+              <button type="submit" class="btn btn-success btn-sm btn-space">Enviar WhatsApp</button>
+            </form>
+            <form action="/pedido/{{ pedido.id }}/editar" method="get" style="display:inline;">
+                <button type="submit" class="btn btn-warning btn-sm btn-space">Editar</button>
+            </form>
+          {% elif pedido.status == "aguardando pagamento" %}
+          <form action="/pedido/{{pedido.id}}/enviar_pagamento" method="post" style="display: inline;">
+            <input type="hidden" name="telefone" value="{{ pedido.telefone}}">
+            <input type="hidden" name="tipo" value="pix">
+            <button class="btn btn-info btn-sm btn-space">💳 Pix</button>
+          </form>  
+          
+            <form method="POST" action="/pedido/{{ pedido.id }}/enviar_pagamento" style="display:inline;">
+            <input type="hidden" name="telefone" value="{{ pedido.telefone}}">
+            <input type="hidden" name="tipo" value="retirada">
+              <button class="btn btn-outline-secondary btn-sm">💵 Pagar na retirada</button>
+            </form>
+            <form method="POST" action="/pedido/{{ pedido.id }}/retirada" style="display:inline;">
+              <button class="btn btn-warning btn-sm btn-space">✅ Pagamento confirmado (Pix)</button>
+            </form>
+          {% elif pedido.status == 'aguardando retirada' %}
+          <form method="POST" action="/pedido/{{ pedido.id }}/concluir" style="display:inline;">
+            <button type="submit" class="btn btn-info btn-sm btn-space">✔️ Concluir</button>
           </form>
+          {% endif %}
 
           <button onclick="excluirPedido('{{ pedido.id }}', 'pedido-{{ pedido.id }}')" class="btn btn-danger btn-sm btn-space">
             Excluir
@@ -127,6 +195,13 @@
   </div>
 
   <script>
+    // Ajusta altura dos inputs em mobile para melhor usabilidade
+      if (window.innerWidth < 576) {
+        document.querySelectorAll('.form-control, .btn').forEach(el => {
+          el.style.height = '44px';
+          el.style.fontSize = '16px'; // Tamanho mínimo recomendado para mobile
+        });
+      }
     function enviarPedidoWhatsApp(button) {
       const nome = button.dataset.cliente;
       let telefone = button.dataset.telefone || "";
