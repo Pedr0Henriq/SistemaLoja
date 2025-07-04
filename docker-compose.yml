@@ -1,0 +1,24 @@
+
+services:
+  web:
+    build: ./app
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./app:/app
+    environment:
+      - FLASK_ENV=development
+    depends_on:
+      - evolutionapi
+
+  evolutionapi:
+    image: atendai/evolution-api:v1.8.2
+    ports:
+      - "8000:8080"
+    restart: always
+    volumes:
+      - evolution_instances:/evolution_instances
+    env_file:
+      - .env
+volumes:
+   evolution_instances:

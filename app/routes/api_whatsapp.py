@@ -1,5 +1,5 @@
 import traceback
-from flask import Blueprint, json, jsonify, redirect, request, url_for
+from flask import Blueprint, session, json, jsonify, redirect, render_template, request, url_for
 from urllib.parse import quote
 
 import requests
@@ -8,7 +8,11 @@ from database import get_db
 from utils.services import validar_telefone
 
 
+EVOLUTION_API_KEY = 'lipf0a8hf9srlm6f171bgb'
+route = 'http://evolutionapi:8080'
+
 whatsapp_bp = Blueprint('whatsapp', __name__)
+
 
 @whatsapp_bp.route("/pedido/<pedido_id>/whatsapp", methods=["POST"])
 def enviar_whatsapp(pedido_id):
@@ -20,22 +24,21 @@ def enviar_whatsapp(pedido_id):
 
         lista = "\n".join([f"- {item['quantidade']} x {item['item']}" for item in itens])
 
+        link_pagamento = f"http://localhost:5000/pedido/{pedido_id}/enviar_pagamento"
+
         telefone = ''.join(filter(str.isdigit, telefone))
         mensagem = (
             f"Olá {cliente}! Seu pedido:\n{lista}\n"
             f"Total: R$ {valor}\n\n"
-            "Escolha a forma de pagamento:\n"
-            "1️⃣ Pix: 037.886.844-61\n"
-            "Pague na retirada\n"
-            "2️⃣ Dinheiro\n"
-            "3️⃣ Cartão\n"
+            f"Clique nesse link para escolher a forma de pagamento:\n{link_pagamento}"
+            
         )
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute('UPDATE pedidos SET status = "aguardando pagamento" WHERE id = ?', (pedido_id,))
         conn.commit()
         conn.close()
-        return open_whatsapp_link(telefone, mensagem)
+        return evolution_api(telefone, mensagem)
     except Exception as e:
         print("Erro ao enviar WhatsApp:", traceback.format_exc())
         return jsonify({"erro": f"Erro interno no servidor. {e}"}), 500
@@ -54,7 +57,7 @@ def marcar_retirada(pedido_id):
         mensagem = (
                 f"Olá {cliente}! Seu pedido está pronto pra retirada!\n"
             )
-        return open_whatsapp_link(telefone, mensagem)
+        return evolution_api(telefone, mensagem)
     except Exception as e:
         print("Erro ao marcar retirada:", traceback.format_exc())
         return jsonify({"erro": f"Erro interno no servidor. {e}"}), 500
@@ -72,42 +75,40 @@ def marcar_entregue(pedido_id):
     except Exception as e:
         return f"Erro ao marcar como entregue: {str(e)}", 500
 
-@whatsapp_bp.route("/pedido/<pedido_id>/enviar_pagamento", methods=["POST"])
+@whatsapp_bp.route("/pedido/<pedido_id>/enviar_pagamento", methods=["GET"])
 def enviar_pagamento(pedido_id):
     try:
-        telefone = request.form.get("telefone")
-        if not validar_telefone(telefone):
-            return jsonify({"erro": "Telefone inválido."}), 400
-        telefone = ''.join(filter(str.isdigit, telefone))
-        tipo_pagamento = request.form.get("tipo")
-        if tipo_pagamento == 'pix':
-            mensagem = (
-                f"Olá! Nosso Pix é: 037.886.844-61\n"
-                "Por favor, envie o comprovante de pagamento para confirmar seu pedido.\n"
-                "Agradecemos pela preferência!"
-            )
-            link = f"https://wa.me/55{telefone}?text={quote(mensagem)}"
-            return open_whatsapp_link(telefone, mensagem)
-        else:    
-            response = requests.post(
-                f"http://localhost:5000/pedido/{pedido_id}/retirada"
-            )
-            if response.ok:
-                return redirect(url_for("employee.painel"))
-            else:
-                return jsonify({"erro": "Erro ao marcar pedido como pronto para retirada."}), 500
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT cliente, telefone FROM pedidos WHERE id = ?", (pedido_id,))
+        resultado = cursor.fetchone()
+        cursor.execute('SELECT item, quantidade FROM itens WHERE pedido_id = ?', (pedido_id,))
+        itens = cursor.fetchall()
+        conn.close()
+        return render_template("payment.html", cliente=resultado[0], telefone=resultado[1], itens=itens)
     except Exception as e:
         print("Erro ao enviar confirmação de pagamento:", traceback.format_exc())
         return jsonify({"erro": f"Erro interno no servidor. {e}"}), 500
     
 
 
-def open_whatsapp_link(telefone, mensagem):
+def evolution_api(telefone, mensagem):
     telefone = ''.join(filter(str.isdigit, telefone))
-    link = f"https://wa.me/55{telefone}?text={quote(mensagem)}"
-    return f"""
-            <script>
-                window.open('{link}', '_blank');
-                window.history.back();  // Volta para a página anterior
-            </script>
-        """
+    instance = 'Pedro'
+    url = f"{route}/message/sendText/{instance}"
+    headers = {
+        "apikey": 'livia0416',
+        "Content-Type": "application/json"
+    }
+    payload = {
+    "number": f"55{telefone}",
+    "textMessage": {"text": mensagem}
+}
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+        if response.ok:
+            return redirect(url_for("employee.painel"))
+    except requests.exceptions.RequestException as e:
+        print(f"Erro ao enviar mensagem via Evolution API: {e}")
+        return jsonify({"erro": "Erro ao enviar mensagem via Evolution API."}), 500
