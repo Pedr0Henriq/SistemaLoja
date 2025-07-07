@@ -70,5 +70,7 @@ desktop.ini
 docker-compose.override.yml
 
 # Pastas que você quer ignorar
-static/fotos/
-static/pedidos/
+/app/static/fotos/
+/app/static/pedidos/
+/app/pedidos.db
+/app/routes/__pycache__/
