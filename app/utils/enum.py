@@ -1,9 +1,9 @@
 from enum import Enum
 
 class Unidades(Enum):
-    METRO = "m"
-    CENTIMETRO = "c"
-    UNIDADE = "u"
+    m = "metro(s)"
+    c = "centímetros"
+    u = "unidade(s)"
 
     @classmethod
     def choices(cls):
@@ -11,4 +11,4 @@ class Unidades(Enum):
     
     @classmethod
     def is_valid(cls, value):
-        return value.lower() in [unit.value for unit in cls]
+        return value.lower() in [unit.name for unit in cls]

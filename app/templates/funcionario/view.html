@@ -161,21 +161,6 @@
             <form action="/pedido/{{ pedido.id }}/editar" method="get" style="display:inline;">
                 <button type="submit" class="btn btn-warning btn-sm btn-space">Editar</button>
             </form>
-          {% elif pedido.status == "aguardando pagamento" %}
-          <form action="/pedido/{{pedido.id}}/enviar_pagamento" method="post" style="display: inline;">
-            <input type="hidden" name="telefone" value="{{ pedido.telefone}}">
-            <input type="hidden" name="tipo" value="pix">
-            <button class="btn btn-info btn-sm btn-space">💳 Pix</button>
-          </form>  
-          
-            <form method="POST" action="/pedido/{{ pedido.id }}/enviar_pagamento" style="display:inline;">
-            <input type="hidden" name="telefone" value="{{ pedido.telefone}}">
-            <input type="hidden" name="tipo" value="retirada">
-              <button class="btn btn-outline-secondary btn-sm">💵 Pagar na retirada</button>
-            </form>
-            <form method="POST" action="/pedido/{{ pedido.id }}/retirada" style="display:inline;">
-              <button class="btn btn-warning btn-sm btn-space">✅ Pagamento confirmado (Pix)</button>
-            </form>
           {% elif pedido.status == 'aguardando retirada' %}
           <form method="POST" action="/pedido/{{ pedido.id }}/concluir" style="display:inline;">
             <button type="submit" class="btn btn-info btn-sm btn-space">✔️ Concluir</button>

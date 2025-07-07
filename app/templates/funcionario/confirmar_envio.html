@@ -72,7 +72,7 @@
     <h2>Confirmar envio do pedido de {{ cliente }}</h2>
     <ul>
         {% for item in itens %}
-            <li>{{ item.quantidade }}{{item.unidade}} x {{ item.item }}</li>
+            <li>{{ item.quantidade }} {{item.unidade}} x {{ item.item }}</li>
         {% endfor %}
     </ul>
     <form method="POST" action="/pedido/{{ pedido_id }}/whatsapp">

@@ -3,7 +3,7 @@ import re
 import traceback
 import uuid
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
-from database import get_db
+from database.database import get_db
 from utils.pdf_generator import PDFGenerationException, gerar_pdf
 from utils.services import PedidoParsingException, parse_mensagem, validar_telefone
 
@@ -101,14 +101,15 @@ def receber_pedido():
             'cliente': data['cliente'].strip(),
             'telefone': data['telefone'].strip(),
             'data_hora': datetime.now().strftime("%d/%m/%Y %H:%M"),
-            'status': 'pendente'
+            'status': 'pendente',
+            'valor_total': '0.0'
         }
         caminho_pdf = gerar_pdf(pedido,mensagem)
         pedido['arquivo_pdf'] = caminho_pdf
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO pedidos VALUES (:id, :cliente, :telefone, :data_hora, :status, :arquivo_pdf)",
+            "INSERT INTO pedidos VALUES (:id, :cliente, :telefone, :data_hora, :status, :arquivo_pdf, :valor_total)",
             pedido
         )
         for idx, item in enumerate(mensagem):

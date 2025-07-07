@@ -31,7 +31,7 @@ def cliente_enviar():
     try:
         resposta = requests.post("http://localhost:5000/pedido", json=payload)
 
-        if resposta.status_code == 200 or resposta.status_code == 201:
+        if resposta.ok:
             return redirect(url_for("client.index",sucesso=cliente))
         else:
             return f"Erro ao enviar pedido: {resposta.json().get('erro')}", 400

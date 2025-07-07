@@ -5,7 +5,7 @@ import sqlite3
 import traceback
 from flask import Blueprint, g, json, jsonify, render_template, request
 
-from database import get_db
+from database.database import get_db
 from utils.services import validar_telefone
 
 
