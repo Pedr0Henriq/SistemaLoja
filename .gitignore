@@ -1,0 +1,74 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtualenv
+.venv/
+venv/
+ENV/
+env/
+.Python
+
+# Environment variables
+.env
+.env.*
+
+# Jupyter
+.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# macOS
+.DS_Store
+
+# Test / coverage
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+
+# PyInstaller
+dist/
+build/
+*.spec
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Profiler
+*.prof
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Databases
+*.sqlite3
+*.db
+
+# System files
+Thumbs.db
+desktop.ini
+
+# Docker
+*.pid
+*.img
+*.tar
+*.bak
+docker-compose.override.yml
+
+# Pastas que você quer ignorar
+static/fotos/
+static/pedidos/
