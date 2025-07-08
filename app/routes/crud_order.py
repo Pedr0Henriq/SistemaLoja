@@ -52,13 +52,11 @@ def salver_editar_pedido(pedido_id):
         if not validar_telefone(telefone):
             return jsonify({'erro':'Formato de telefone inválido.'}), 400
         
-
-        status = request.form.get('status')
         data_hora = datetime.now().strftime("%d/%m/%Y %H:%M")
 
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute('UPDATE pedidos SET telefone= ?, status = ?, data_hora = ? WHERE id = ?',(telefone,status,data_hora,id,))
+        cursor.execute('UPDATE pedidos SET telefone= ?, data_hora = ? WHERE id = ?',(telefone,data_hora,id,))
         
 
         itens = []
@@ -71,7 +69,7 @@ def salver_editar_pedido(pedido_id):
                     itens.append({})
                 itens[index][campo] = value
         for item in itens:
-            cursor.execute('UPDATE itens SET item= ?, quantidade = ? WHERE pedido_id = ?',(item['item'],item['quantidade'],id,))
+            cursor.execute('UPDATE itens SET item= ?, quantidade = ?, unidade = ? WHERE pedido_id = ?',(item['item'],item['quantidade'],item['unidade'],id,))
         conn.commit() 
         conn.close()
         return redirect(url_for('employee.painel'))

@@ -116,18 +116,6 @@
   <audio id="notificacao-audio" src="static/assets/new-notification-011-364050.mp3"></audio>
 
   <div class="container painel">
-    <form method="get" class="row g-2 g-md-3 mb-4">
-      <div class="col-12 col-md-4">
-        <input type="text" name="cliente" placeholder="Buscar por cliente" class="form-control" value="{{ request.args.get('cliente', '') }}">
-      </div>
-      <div class="col-12 col-md-3">
-        <input type="date" name="data" class="form-control" value="{{ request.args.get('data', '') or current_date }}">
-      </div>
-      <div class="col-12 col-md-2">
-        <button type="submit" class="btn btn-primary">Filtrar</button>
-      </div>
-    </form>
-
     {% for pedido in pedidos %}
     <div class="card card-pedido" id="pedido-{{ pedido.id }}">
       <div class="card-body">
@@ -180,28 +168,18 @@
   </div>
 
   <script>
-    // Ajusta altura dos inputs em mobile para melhor usabilidade
       if (window.innerWidth < 576) {
         document.querySelectorAll('.form-control, .btn').forEach(el => {
           el.style.height = '44px';
-          el.style.fontSize = '16px'; // Tamanho mínimo recomendado para mobile
+          el.style.fontSize = '16px'; 
         });
       }
-    function enviarPedidoWhatsApp(button) {
-      const nome = button.dataset.cliente;
-      let telefone = button.dataset.telefone || "";
-      if (/^\d{8,9}$/.test(telefone)) telefone = "81" + telefone;
 
-      const itens = JSON.parse(button.dataset.itens);
-      const lista = itens.map(i => `- ${i.quantidade} x ${i.item}`).join("%0A");
 
-      const valor = prompt("Informe o valor total do pedido para " + nome + ":");
-      if (valor) {
-        const mensagem = `Olá ${nome}! Seu pedido:%0A${lista}%0ATotal: R$ ${valor}%0A%0AEscolha a forma de pagamento:%0A1️⃣ Pix: 037.886.844-61%0APague na retirada%0A2️⃣ Dinheiro%0A3️⃣ Cartão%0A%0A`;
-        const link = `https://wa.me/55${telefone}?text=${mensagem}`;
-        window.open(link, '_blank');
-      }
-    }
+    document.querySelector('form').addEventListener('submit', function(event) {
+      event.preventDefault();
+      filtrarPedidos();
+    });
 
     function excluirPedido(id, cardId) {
       if (confirm('Tem certeza que deseja excluir este pedido?')) {

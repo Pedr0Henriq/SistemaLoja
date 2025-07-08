@@ -86,4 +86,4 @@ def evolution_api(telefone, mensagem):
             }), 500
     except requests.exceptions.RequestException as e:
         print(f"Erro ao enviar mensagem via Evolution API: {e}")
-        return jsonify({"erro": "Erro ao enviar mensagem via Evolution API."}), 500
+        return jsonify({"erro": f"Erro ao enviar mensagem via Evolution API: {e}"}), 500

@@ -93,23 +93,13 @@
             Telefone:
             <input type="text" name="telefone" value="{{ pedido[2] or '' }}" pattern="\(?\d{2}\)?[\s-]?\d{4,5}[\s-]?\d{4}" placeholder="(XX) XXXXX-XXXX">
         </label>
-        <label>
-            Status:
-            <select name="status" required>
-                <option value="">Selecione</option>
-                <option value="pendente" {% if pedido[4] == 'pendente' %}selected{% endif %}>Pendente</option>
-                <option value="processando" {% if pedido[4] == 'processando' %}selected{% endif %}>Processando</option>
-                <option value="enviado" {% if pedido[4] == 'enviado' %}selected{% endif %}>Enviado</option>
-                <option value="entregue" {% if pedido[4] == 'entregue' %}selected{% endif %}>Entregue</option>
-                <option value="cancelado" {% if pedido[4] == 'cancelado' %}selected{% endif %}>Cancelado</option>
-            </select>
-        </label>
         <h2>Itens do Pedido</h2>
         <table>
             <thead>
                 <tr>
                     <th>Produto</th>
                     <th>Quantidade</th>
+                    <th>Unidade</th>
                 </tr>
             </thead>
             <tbody>
@@ -120,6 +110,9 @@
                     </td>
                     <td>
                         <input type="number" name="itens[{{ loop.index0 }}][quantidade]" value="{{ item[3] }}" min="1" required>
+                    </td>
+                    <td>
+                        <input type="text" name="itens[{{ loop.index0 }}][unidade]" value="{{ item[4] }}" required>
                     </td>
                 </tr>
                 {% endfor %}

@@ -1,5 +1,5 @@
 from flask import Flask
-from database import init_db
+from database.database import init_db
 from routes.client import client_bp
 from routes.crud_order import crud_bp
 from routes.api_whatsapp import whatsapp_bp
