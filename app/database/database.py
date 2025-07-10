@@ -17,7 +17,6 @@ def init_db():
                      telefone TEXT DEFAULT '(XX) XXXXX-XXXX',
                      data_hora TEXT NOT NULL,
                      status TEXT DEFAULT 'pendente',
-                     arquivo_pdf TEXT,
                      valor_total REAL DEFAULT 0.0
                      )
                      ''')
@@ -25,7 +24,7 @@ def init_db():
                      id INTEGER PRIMARY KEY AUTOINCREMENT,
                      pedido_id TEXT NOT NULL,
                      item TEXT NOT NULL,
-                     quantidade INTEGER NOT NULL,
+                     quantidade REAL NOT NULL,
                      unidade TEXT NOT NULL DEFAULT 'u',
                      FOREIGN KEY (pedido_id) REFERENCES pedidos (id) ON DELETE CASCADE
                      )''')

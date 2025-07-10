@@ -157,13 +157,19 @@
 
           <button onclick="excluirPedido('{{ pedido.id }}', 'pedido-{{ pedido.id }}')" class="btn btn-danger btn-sm btn-space">
             Excluir
-          </button></div>
+          </button>
+          {% if pedido.status == 'pendente' %}
+           <form method="POST" action="/pedido/{{ pedido.id }}/cancelar" class="form-cancelar" style="display:inline;">
+            <button type="submit" class="btn btn-danger btn-sm btn-space">Cancelar Pedido</button>
+          </form>
+          {% endif %}
+        </div>
       </div>
     </div>
     {% endfor %}
 
     {% if pedidos|length == 0 %}
-    <p class="text-center text-muted">Nenhum pedido encontrado para os filtros aplicados.</p>
+    <p class="text-center text-muted">Nenhum pedido encontrado.</p>
     {% endif %}
   </div>
 
@@ -175,10 +181,13 @@
         });
       }
 
-
-    document.querySelector('form').addEventListener('submit', function(event) {
-      event.preventDefault();
-      filtrarPedidos();
+    document.querySelectorAll('.form-cancelar').forEach(form => {
+      form.addEventListener('submit', function(e){
+        const confirmacao = confirm('Tem certeza que deseja cancelar este pedido?');
+        if (!confirmacao) {
+          e.preventDefault();
+        }
+      });
     });
 
     function excluirPedido(id, cardId) {
@@ -192,6 +201,29 @@
           }
           location.reload();
         });
+      }
+    }
+
+    function cancelarPedido(id, cardId) {
+      if (confirm('Tem certeza que deseja cancelar este pedido?')) {
+        fetch(`/pedido/${id}/cancelar`, {
+          method: 'POST',
+        }).then(response => {
+          if (response.ok){
+            fetch(`/pedido/${id}/excluir`, {
+          method: 'DELETE',
+        })
+        .then(response => {
+          if (response.ok) {
+            document.getElementById(cardId).remove();
+          }
+          location.reload();
+        });
+          }
+        })
+        .catch(error => {
+          console.error('Erro ao cancelar o pedido:', error);
+        });        
       }
     }
 

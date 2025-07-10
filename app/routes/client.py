@@ -36,9 +36,11 @@ def cliente_enviar():
         else:
             return f"Erro ao enviar pedido: {resposta.json().get('erro')}", 400
     except Exception as e:
-        return render_template_string(f"""
-            <div style='padding: 20px;'>
-              <h2>❌ Erro interno: {str(e)}</h2>
-              <a href='/'>Tentar novamente</a>
+        return render_template_string("""
+            <div style='padding: 20px; font-family: sans-serif;'>
+            <h2>❌ Erro inesperado</h2>
+            <p>Algo deu errado ao enviar seu pedido.</p>
+            <p>Por favor, tente novamente ou entre em contato com o suporte.</p>
+            <a href='/'>Tentar novamente</a>
             </div>
         """)

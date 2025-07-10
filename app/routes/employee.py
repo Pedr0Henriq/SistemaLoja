@@ -13,13 +13,14 @@ employee_bp = Blueprint('employee', __name__)
 
 @employee_bp.route("/painel")
 def painel():
-    status = request.args.getlist("status")
+    conn = None
     try:
+        status = request.args.getlist("status")
         if not status:
             status = ["pendente", "entregue", "aguardando pagamento", "aguardando retirada"]
         placeholders = ','.join('?' for _ in status)
         conn = get_db()
-        conn.row_factory = sqlite3.Row  # Permite acessar colunas por nome
+        conn.row_factory = sqlite3.Row 
         cursor = conn.cursor()
         
         cursor.execute(f"SELECT id FROM pedidos WHERE status IN ({placeholders})", status)
@@ -32,7 +33,7 @@ def painel():
             
             cursor.execute("""
                 SELECT 
-                    p.id, p.cliente, p.telefone, p.data_hora, p.status, p.arquivo_pdf,
+                    p.id, p.cliente, p.telefone, p.data_hora, p.status,
                     i.id as item_id, i.item, i.quantidade, i.unidade,
                     f.path as foto_path
                 FROM pedidos p
@@ -55,7 +56,6 @@ def painel():
                         "telefone": row[2],
                         "data_hora": row[3],
                         "status": row[4],
-                        "arquivo_pdf": row[5],
                         "itens": []
                     })
                 
@@ -63,27 +63,28 @@ def painel():
                 if row[6]:  
                     if not itens_fotos or itens_fotos[-1]['item_id'] != row[6]:
                         itens_fotos.append({
-                            "item_id": row[6],
-                            "item": row[7],
-                            "quantidade": row[8],
-                            "unidade": row[9],
+                            "item_id": row[5],
+                            "item": row[6],
+                            "quantidade": row[7],
+                            "unidade": row[8],
                             "fotos": []
                         })
-                    
-
-                    if row[10]:  
-                        itens_fotos[-1]['fotos'].append(row[10])
+                    if row[9]:  
+                        itens_fotos[-1]['fotos'].append(row[9])
             
 
             if pedidos and pedidos[-1]['id'] == order_id:
                 pedidos[-1]['itens'] = itens_fotos
-        
-        conn.close()
-        print("Pedidos carregados:", pedidos)
         return render_template("funcionario/view.html", pedidos = pedidos)
     except sqlite3.Error as e:
-        print("Erro ao acessar o banco de dados:", e)
-        return jsonify({"erro": "Erro ao acessar o banco de dados."}), 500
+        print("Erro ao acessar o banco de dados:", e, flush=True)
+        return jsonify({"erro": f"Erro ao acessar o banco de dados. {e}"}), 500
+    except Exception as e:
+        print("Erro ao carregar o painel:", traceback.format_exc(), flush=True)
+        return jsonify({"erro": "Erro interno no servidor."}), 500
+    finally:
+        if conn:
+            conn.close()
     
 
 
@@ -92,10 +93,18 @@ def confirmar_envio(pedido_id):
     try:
         cliente = request.args.get("cliente")
         telefone = request.args.get("telefone")
-        itens = json.loads(request.args.get("itens"))
+        itens_json = request.args.get("itens")
+        
+
+        if not cliente or not telefone or not itens_json:
+            return jsonify({"erro": "Parâmetros ausentes."}), 400
         
         if not validar_telefone(telefone):
             return jsonify({"erro": "Telefone inválido."}), 400
+        try:
+            itens = json.loads(itens_json)
+        except json.JSONDecodeError:
+            return jsonify({"erro": "Formato de itens inválido."}), 400
         
         return render_template("funcionario/confirmar_envio.html", 
                            pedido_id=pedido_id, 
@@ -104,7 +113,7 @@ def confirmar_envio(pedido_id):
                            itens=itens)
     
     except Exception as e:
-        print("Erro ao confirmar envio:", traceback.format_exc())
+        print("Erro ao confirmar envio:", traceback.format_exc(), flush=True)
         return jsonify({"erro": "Erro interno no servidor."}), 500
     
 
@@ -112,7 +121,6 @@ def confirmar_envio(pedido_id):
 
 def get_ultimo_pedido():
     if not hasattr(g, 'ultimo_pedido'):
-        # Tenta carregar de arquivo
         if os.path.exists('ultimo_pedido.pkl'):
             with open('ultimo_pedido.pkl', 'rb') as f:
                 g.ultimo_pedido = pickle.load(f)
@@ -122,20 +130,18 @@ def get_ultimo_pedido():
 
 def set_ultimo_pedido(valor):
     g.ultimo_pedido = valor
-    # Persiste em arquivo
     with open('ultimo_pedido.pkl', 'wb') as f:
         pickle.dump(valor, f)
 
 @employee_bp.route("/verificar_novos_pedidos")
 def verificar_novos_pedidos():
+    conn = None
     try:
-    # Verifica se há novos pedidos
         conn = get_db()
         cursor = conn.cursor()
         cursor.execute("SELECT data_hora FROM pedidos ORDER BY data_hora DESC LIMIT 1")
         ultimo_pedido = cursor.fetchone()
-        conn.close()
-        if ultimo_pedido is None:
+        if not ultimo_pedido:
             return jsonify({"novo": False})
         ultimo_pedido = datetime.strptime(ultimo_pedido[0], "%d/%m/%Y %H:%M")
 
@@ -153,4 +159,7 @@ def verificar_novos_pedidos():
 
     except Exception as e:
         print("Erro ao verificar novos pedidos:", traceback.format_exc())
-        return jsonify({"erro": str(e)}), 500
+        return jsonify({"erro": f'Erro ao verificar novos pedidos {e}'}), 500
+    finally:
+        if conn:
+            conn.close()

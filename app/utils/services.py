@@ -1,3 +1,4 @@
+import os
 from flask import jsonify
 import re
 import unicodedata
@@ -6,8 +7,6 @@ from utils.enum import Unidades
 class PedidoParsingException(Exception):
     pass
 
-def normalize_text(texto):
-    return unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
 
 def parse_mensagem(mensagem):
     try:        
@@ -16,14 +15,14 @@ def parse_mensagem(mensagem):
         pedido = []
         
         for linha in linhas:
-            match = re.match(r"^(\d+)([muc])\sx\s([a-zA-ZÀ-ÿ\s]+)$", linha, re.IGNORECASE)
+            match = re.match(r"^(\d+(?:,\d{1,2})?)([muc])\sx\s([a-zA-ZÀ-ÿ0-9º°\-\s]+)$", linha, re.IGNORECASE)
             if match:
                 qtd, unidade, item = match.groups()
                 unidade = unidade.lower()
                 if Unidades.is_valid(unidade):
                     pedido.append({
                         "item": item.strip(),
-                        "quantidade": int(qtd),
+                        "quantidade": float(qtd.replace(',', '.')),
                         "unidade": Unidades[unidade].value
                     })
                 else:
@@ -38,3 +37,14 @@ def validar_telefone(telefone):
     """Valida telefone no formato (XX) XXXX-XXXX ou (XX) XXXXX-XXXX"""
     padrao = re.compile(r'^\(\d{2}\) \d{4,5}-\d{4}$')
     return bool(padrao.match(telefone))
+
+
+def excluir_anexos(fotos: list):    
+    for foto in fotos:
+        caminho_foto = foto
+        try:
+            if os.path.exists(caminho_foto):
+                os.remove(caminho_foto)
+                print(f"Arquivo {caminho_foto} excluído com sucesso.")
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Arquivo {caminho_foto} não encontrado.")
