@@ -1,6 +1,6 @@
 # 🛒 Sistema de Pedidos Online
 
-Sistema de pedidos online desenvolvido em **Python**, com integração à **Evolution API**. Permite o registro de pedidos, geração de PDF, envio de mensagens via WhatsApp e painel web para visualização em tempo real pelos funcionários.
+Sistema de pedidos online desenvolvido em **Python**, com integração à **Evolution API**. Permite o registro de pedidos, envio de mensagens via WhatsApp e painel web para visualização em tempo real pelos funcionários.
 
 ## 🚀 Funcionalidades
 
