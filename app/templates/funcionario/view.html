@@ -94,14 +94,34 @@
       padding: 3px 6px;
     }
 
-    .fotos-item a {
-  display: inline-block;
-  margin-top: 5px;
-  padding: 3px 8px;
-  background: #f0f8ff;
-  border-radius: 4px;
-  font-size: 14px;
-}
+ .fotos-item {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .fotos-item a {
+    display: inline-block;
+    padding: 3px 6px;
+    background: #f0f8ff;
+    border-radius: 4px;
+    font-size: 14px;
+    border: 1px solid transparent;
+    transition: border-color 0.3s;
+  }
+  .fotos-item a:hover {
+    border-color: #007bff;
+  }
+
+  .fotos-item img {
+    width: 80px;
+    height: auto;
+    border: 1px solid;
+    border-radius: 4px;
+    object-fit: cover;
+    cursor: pointer;
+    box-shadow: 0 0 3px rgba(0,0,0,0.1);
+  }
   </style>
 </head>
 <body>
@@ -114,6 +134,34 @@
 
   <div id="notificacao">🔔 Novo pedido recebido!</div>
   <audio id="notificacao-audio" src="static/assets/new-notification-011-364050.mp3"></audio>
+  <form method="get" action="{{ url_for('employee.painel') }}" class="mb-4">
+  <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: end;">
+    <!-- Filtro por status -->
+    <div>
+      <label>Status:</label>
+      <select name="status" class="form-control">
+        <option value="">Todos</option>
+        <option value="pendente">Pendente</option>
+        <option value="aguardando pagamento">Aguardando Pagamento</option>
+        <option value="aguardando retirada">Aguardando Retirada</option>
+        <option value="entregue">Entregue</option>
+      </select>
+    </div>
+
+    <!-- Filtro por data -->
+    <div>
+      <label>Data mínima:</label>
+      <input type="date" name="data_min" class="form-control">
+    </div>
+    <div>
+      <label>Data máxima:</label>
+      <input type="date" name="data_max" class="form-control">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+  </div>
+</form>
+
 
   <div class="container painel">
     {% for pedido in pedidos %}
@@ -129,9 +177,9 @@
             {% if item.fotos %}
             <div class="fotos-item">
               {% for foto in item.fotos %}
-              <a href="{{ url_for('static', filename=foto.replace('static/', ''))}}" target="_blank">
-                  Ver foto do produto
-              </a>
+              <a href="{{ url_for('static', filename=foto.replace('static/', '')) }}" target="_blank" title="Ver foto do produto">
+    <img src="{{ url_for('static', filename=foto.replace('static/', '')) }}" alt="Foto do produto">
+  </a>
               {% endfor %}
             </div>
             {% endif %}

@@ -150,8 +150,7 @@
       <h3 class="mt-4">Monte seu pedido</h3>
     </div>
 
-    <form method="post" action="/cliente/enviar" class="hero-form" onsubmit="montarMensagem(event)"
-      enctype="multipart/form-data">
+    <form method="post" action="/cliente/enviar" class="hero-form" onsubmit="event.preventDefault()">
       {% if sucesso %}
       <div class="alert-sucesso">
         ✅ Pedido enviado com sucesso! Obrigado, {{ sucesso }}.
@@ -183,9 +182,10 @@
           <input type="text" name="item[]" class="form-control" placeholder="Nome do item" required
             pattern="[a-zA-ZÀ-ÿ0-9º°'\\-\\/,\\.\\s]{2,100}$"
             title="Use letras, números, vírgulas, pontos, espaços, hífens. Mínimo 2 caracteres.">
-          <input type="file" name="foto_0" class="form-control" onchange="previewImage(this)">
-          <div class="foto-preview">
-            <img alt="Prévia da imagem" class="imagem-preview" id="preview-0" style="display: none;">
+          <input type="file" name="fotos_item_{{i}}" class="form-control" multiple accept="image/*"
+            onchange="previewImage(this)">
+          <div id="preview-container-{{i}}" class="foto-preview">
+            <img alt="Prévia da imagem" class="imagem-preview"  style="display: none;">
           </div>
         </div>
       </div>
@@ -200,17 +200,106 @@
   </div>
 
   <script>
-    document.querySelector("form").addEventListener("submit", function (e) {
+    document.querySelector("form").addEventListener("submit", async function (e) {
       const inputs = document.querySelectorAll("input[name='item[]']");
       for (const input of inputs) {
         const regex = /^[a-zA-ZÀ-ÿ0-9º°'.,\-\/ ]{2,100}$/;
         if (!regex.test(input.value)) {
           alert("Nome do item inválido: " + input.value);
-          e.preventDefault();
           return;
         }
       }
-    });
+
+        // Dados do cliente
+        const cliente = document.getElementById('cliente').value.trim();
+        const telefone = document.getElementById('telefone').value.trim();
+
+        if (!cliente || !telefone) {
+          alert("Preencha nome e telefone.");
+          return;
+        }
+
+        // Itens
+        const container = document.getElementById("itens-pedido");
+        const linhas = container.querySelectorAll(".pedido-linha");
+
+        const itens = [];
+
+        // Função auxiliar para converter arquivo em base64 (promessa)
+        function fileToBase64(file) {
+          return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+          });
+        }
+
+        for (const linha of linhas) {
+          const quantidade = linha.querySelector("input[name='quantidade[]']").value.trim();
+          const unidade = linha.querySelector("select[name='unidade_medida']").value.trim();
+          const nome = linha.querySelector("input[name='item[]']").value.trim();
+
+          if (!quantidade || !unidade || !nome) {
+            alert("Preencha todos os campos dos itens.");
+            return;
+          }
+
+          // Pegando os arquivos do input file (múltiplos)
+          const inputFotos = linha.querySelector("input[type='file']");
+          const arquivos = inputFotos ? inputFotos.files : [];
+
+          const fotosBase64 = [];
+
+          // Converte cada arquivo para base64
+          for (const arquivo of arquivos) {
+            try {
+              const base64 = await fileToBase64(arquivo);
+              fotosBase64.push(base64);
+            } catch {
+              alert("Erro ao ler as imagens.");
+              return;
+            }
+          }
+
+          itens.push({
+            quantidade,
+            unidade,
+            nome,
+            fotos: fotosBase64
+          });
+        }
+
+        // Montar mensagem resumida
+        const mensagem = itens.map(i => `${i.quantidade}${i.unidade} x ${i.nome}`).join('\n');
+
+        // Montar payload JSON
+        const payload = {
+          cliente,
+          telefone,
+          mensagem,
+          itens
+        };
+
+        try {
+          const resposta = await fetch('/cliente/enviar', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+            const data = resposta.json();
+          if (resposta.ok) {
+            alert("Pedido enviado com sucesso!");
+            window.location.href = "/";
+          } else {
+            alert("Erro ao enviar pedido: " + (data.erro || "Erro desconhecido"));
+          }
+        } catch (e) {
+          alert("Erro na comunicação com o servidor." + e.message);
+        }
+      });
 
     function formatarQuantidade(input) {
       let valor = input.value;
@@ -259,17 +348,20 @@
       const linha = document.createElement("div");
       linha.className = "pedido-linha";
       linha.innerHTML = `
-        <input type="number" name="quantidade[]" class="form-control" placeholder="Quantidade" required>
+        <input type="text" name="quantidade[]" class="form-control" placeholder="Quantidade" required
+          inputmode="decimal" pattern="^\d{1,3}(,\d{0,2})?$" oninput="formatarQuantidade(this)">
         <select name="unidade_medida" required class="form-select">
           <option value="">Selecione</option>
           <option value="u">Unidades</option>
           <option value="c">Centímetros</option>
           <option value="m">Metros</option>
         </select>
-        <input type="text" name="item[]" class="form-control" placeholder="Nome do item" required>
-        <input type="file" name="foto_${index}" class="form-control" onchange="previewImage(this)">
-        <div class="foto-preview">
-          <img alt="Prévia da imagem" class="imagem-preview" id="preview-${index}" style="display: none;">
+         <input type="text" name="item[]" class="form-control" placeholder="Nome do item" required
+            pattern="[a-zA-ZÀ-ÿ0-9º°'\\-\\/,\\.\\s]{2,100}$"
+            title="Use letras, números, vírgulas, pontos, espaços, hífens. Mínimo 2 caracteres.">
+        <input type="file" name="fotos_item_${index}" class="form-control" multiple accept="image/*" onchange="previewImage(this)">
+        <div id="preview-container-${index}" class="foto-preview">
+          <img alt="Prévia da imagem" class="imagem-preview" style="display: none;">
         </div>
       `;
       container.appendChild(linha);
@@ -277,35 +369,90 @@
 
     async function montarMensagem(event) {
       event.preventDefault();
-
+      const cliente = document.getElementById('cliente').value.trim();
+      const telefone = document.getElementById('telefone').value.trim();
       const quantidades = document.getElementsByName('quantidade[]');
       const unidadeMedidas = document.getElementsByName('unidade_medida');
-      const itens = document.getElementsByName('item[]');
-      let linhas = [];
+      const nomes = document.getElementsByName('item[]');
+      let itens = [];
       for (let i = 0; i < quantidades.length; i++) {
         const qtd = quantidades[i].value.trim();
         const unidade = unidadeMedidas[i].value.trim();
-        const nome = itens[i].value.trim();
+        const nome = nomes[i].value.trim();
         if (!qtd || !unidade || !nome) {
           alert("Por favor, preencha todos os campos corretamente.");
           return;
         }
-        linhas.push(`${qtd}${unidade} x ${nome}`);
+        const fotosInput = document.querySelector(`input[name="fotos_item_${i}"]`);
+        let fotosBase64 = [];
+        if (fotosInput && fotosInput.files.length > 0) {
+          for (let file of fotosInput.files) {
+            fotosBase64.push(await fileToBase64(file));
+          }
+        }
+        itens.push({
+          quantidade: qtd,
+          unidade: unidade,
+          nome: nome,
+          fotos: fotosBase64
+        });
       }
-      document.getElementById('mensagem').value = linhas.join('\n');
-      event.target.submit();
+      const linhasMensagem = itens.map(item => `${item.quantidade}${item.unidade} x ${item.nome}`);
+      const mensagem = linhasMensagem.join('\n');
+
+      const payload = {
+        cliente,
+        telefone,
+        mensagem,
+        itens
+      };
+
+      try {
+        const response = await fetch('/cliente/enviar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          alert('Pedido enviado com sucesso!');
+          window.location.reload();
+        } else {
+          const data = await response.json();
+          alert('Erro: ' + (data.erro || 'Erro desconhecido'));
+        }
+      } catch (error) {
+        alert('Erro ao enviar pedido: ' + error.message);
+      }
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
     }
 
     function previewImage(input) {
-      const previewId = 'preview-' + input.name.split('_')[1];
+      const previewId = 'preview-container-' + input.name.split('_')[1];
       const preview = document.getElementById(previewId);
-      if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function (e) {
-          preview.src = e.target.result;
-          preview.style.display = 'block';
-        };
-        reader.readAsDataURL(input.files[0]);
+      if(!preview) return;
+      preview.innerHTML = '';
+      if (input.files) {
+        for (let i = 0; i < input.files.length; i++) {
+          const file = input.files[i];
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.maxWidth = '100px';
+            img.style.marginRight = '8px';
+            preview.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        }
       } else {
         preview.src = '';
         preview.style.display = 'none';

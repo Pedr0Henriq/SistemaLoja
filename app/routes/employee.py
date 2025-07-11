@@ -15,15 +15,30 @@ employee_bp = Blueprint('employee', __name__)
 def painel():
     conn = None
     try:
-        status = request.args.getlist("status")
-        if not status:
-            status = ["pendente", "entregue", "aguardando pagamento", "aguardando retirada"]
-        placeholders = ','.join('?' for _ in status)
+        status = request.args.get("status")
+        data_min = request.args.get("data_min")
+        data_max = request.args.get("data_max")
+
+        filtros = []
+        parametros = []
+        if status:
+            filtros.append("p.status = ?")
+            parametros.append(status)
+        
+        if data_min:
+            filtros.append("strftime('%Y-%m-%d', p.data_hora) >= ?")
+            parametros.append(data_min)
+        if data_max:
+            filtros.append("strftime('%Y-%m-%d', p.data_hora) <= ?")
+            parametros.append(data_max)
+        
+        where_clause = "WHERE " + " AND ".join(filtros) if filtros else ""
+
         conn = get_db()
         conn.row_factory = sqlite3.Row 
         cursor = conn.cursor()
         
-        cursor.execute(f"SELECT id FROM pedidos WHERE status IN ({placeholders})", status)
+        cursor.execute(f"SELECT DISTINCT p.id FROM pedidos p {where_clause} ORDER BY p.data_hora DESC", parametros)
         order_ids = cursor.fetchall()
         
         pedidos = []
@@ -44,37 +59,46 @@ def painel():
             """, (order_id,))
             
             items_data = cursor.fetchall()
-            
+            current_pedido = None
+            current_item = None
             itens_fotos = []
             
             for row in items_data:
 
-                if not pedidos or pedidos[-1]['id'] != order_id:
-                    pedidos.append({
-                        "id": row[0],
-                        "cliente": row[1],
-                        "telefone": row[2],
-                        "data_hora": row[3],
-                        "status": row[4],
-                        "itens": []
-                    })
+                if current_pedido is None:
+                    current_pedido = {
+                         "id": row["id"],
+                    "cliente": row["cliente"],
+                    "telefone": row["telefone"],
+                    "data_hora": row["data_hora"],
+                    "status": row["status"],
+                    "itens": [] # Será preenchido no final
+                    }
                 
+                item_id = row["item_id"]
 
-                if row[6]:  
-                    if not itens_fotos or itens_fotos[-1]['item_id'] != row[6]:
-                        itens_fotos.append({
-                            "item_id": row[5],
-                            "item": row[6],
-                            "quantidade": row[7],
-                            "unidade": row[8],
-                            "fotos": []
-                        })
-                    if row[9]:  
-                        itens_fotos[-1]['fotos'].append(row[9])
+                if current_item is None or current_item['item_id'] != item_id:
+                    if current_item:
+                        itens_fotos.append(current_item)
+                    current_item = {
+                        "item_id": item_id,
+                        "item": row["item"],
+                        "quantidade": row["quantidade"],
+                        "unidade": row["unidade"],
+                        "fotos": []
+                    }
+                foto_path = row["foto_path"]
+                if foto_path:
+                    current_item['fotos'].append(foto_path)
+            if current_item:
+                itens_fotos.append(current_item)
+                
+            if current_pedido:
+                print(f"[PANEL] Pedido {current_pedido} carregado com {len(itens_fotos)} itens e fotos.", flush=True)
+                current_pedido['itens'] = itens_fotos
+                pedidos.append(current_pedido)
             
-
-            if pedidos and pedidos[-1]['id'] == order_id:
-                pedidos[-1]['itens'] = itens_fotos
+        print(f"[PANEL] Pedidos carregados: {pedidos}", flush=True)
         return render_template("funcionario/view.html", pedidos = pedidos)
     except sqlite3.Error as e:
         print("Erro ao acessar o banco de dados:", e, flush=True)
