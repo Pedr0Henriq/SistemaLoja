@@ -104,10 +104,10 @@ def cancelar_pedido(pedido_id):
 
 def evolution_api(telefone, mensagem):
     telefone = ''.join(filter(str.isdigit, telefone))
-    instance = 'Pedro'
+    instance = 'ArmarinhoGloria'
     url = f"{route}/message/sendText/{instance}"
     headers = {
-        "apikey": 'livia0416',
+        "apikey": 'suaapikey',
         "Content-Type": "application/json"
 }
     payload = {
