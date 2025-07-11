@@ -104,7 +104,9 @@ def salver_editar_pedido(pedido_id):
 def receber_pedido():
     link = url_for('client.index')
     try:
-        data = request.json
+        data = request.get_json()
+
+        print(f"[RECEBENDO PEDIDO] {data}", flush=True)
 
         if not all(key in data for key in ['cliente', 'mensagem', 'telefone']):
             return jsonify({"erro": "Dados incompletos. Certifique-se de enviar 'cliente', 'mensagem' e 'telefone'."}), 400
@@ -116,6 +118,12 @@ def receber_pedido():
         mensagem = data['mensagem'].strip()
         mensagem = parse_mensagem(mensagem)
         fotos = data.get('fotos', [])
+        fotos_por_item = {}
+        for foto in fotos:
+            nome_item = foto.get('item_nome')
+            caminho_fotos = foto.get('fotos', [])
+            if nome_item:
+                fotos_por_item[nome_item] = caminho_fotos
         pedido = {
             'id': str(uuid.uuid4()),
             'cliente': data['cliente'].strip(),
@@ -130,14 +138,13 @@ def receber_pedido():
             "INSERT INTO pedidos VALUES (:id, :cliente, :telefone, :data_hora, :status, :valor_total)",
             pedido
         )
-        for idx, item in enumerate(mensagem):
+        for item in mensagem:
             cursor.execute("INSERT INTO itens (pedido_id, item, quantidade, unidade) VALUES (?, ?, ?, ?)",
             (pedido["id"],item['item'],item['quantidade'],item['unidade']))
             item_id = cursor.lastrowid
-            if idx < len(fotos):
-              caminho_foto = fotos[idx]
-              cursor.execute("INSERT INTO foto_item (path, pedido_id, item_id) VALUES (?, ?, ?)",(caminho_foto, pedido['id'], item_id))
-                           
+            fotos_do_item = fotos_por_item.get(item['item'], [])
+            for foto in fotos_do_item:
+              cursor.execute("INSERT INTO foto_item (path, pedido_id, item_id) VALUES (?, ?, ?)",(foto, pedido['id'], item_id))
         conn.commit()
         conn.close()
         return jsonify({
