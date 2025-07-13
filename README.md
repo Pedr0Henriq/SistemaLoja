@@ -14,7 +14,6 @@ Sistema de pedidos online desenvolvido em **Python**, com integração à **Evol
   - Filtro por data e cliente
   - Atualização em tempo real via JavaScript (sem recarregar)
   - Marcação do status do pedido (Pendente → Pagamento → Retirada → Entregue)
-- Integração com métodos de pagamento: Pix, Dinheiro e Cartão
 - Upload de imagens via multipart/form-data
 
 ## 🧰 Tecnologias Utilizadas
@@ -24,7 +23,6 @@ Sistema de pedidos online desenvolvido em **Python**, com integração à **Evol
 - **Jinja2** (Templates HTML)
 - **JavaScript** (atualizações dinâmicas no painel)
 - **Bootstrap** (estilização)
-- **reportlab** / **fpdf** (Geração de PDF)
 - **Evolution API** (envio de mensagens via WhatsApp)
 
 ## ⚙️ Como Executar Localmente
